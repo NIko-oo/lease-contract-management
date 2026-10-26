@@ -57,6 +57,10 @@
 
 ![客户管理：客户编码、公司名称、统一社会信用代码与银行账户建档，支持搜索、状态筛选与导出 Excel](assets/screenshots/customer.png)
 
+合同终止：
+
+![合同终止：选择已审核合同并填写终止日期，提交后进入财务审核，通过后合同状态与台账同步更新](assets/screenshots/termination.png)
+
 权限配置：
 
 ![权限配置：按功能点 × 角色勾选权限，前端按钮与后端接口共用同一套点位](assets/screenshots/permission-config.png)

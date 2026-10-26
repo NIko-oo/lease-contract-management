@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+[ "$SKIP_GIT_HOOKS" = "1" ] && exit 0
+export PATH="node_modules/.bin:$PATH"
+# 走 scripts/gate.js 而不是 npm run precommit：后者入口是模板托管的 scripts/hooks/run-precommit.js，
+# 每次 chore(upgrade) 都会被整文件覆盖成 shell:false 启动 npm.cmd，在 Windows 上静默失效
+node scripts/gate.js

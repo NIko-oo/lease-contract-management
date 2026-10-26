@@ -1,0 +1,52 @@
+{
+  "id": "send_feishu_overdue_notification_1",
+  "pluginKey": "@official-plugins/send-feishu-message",
+  "pluginVersion": "1.0.23",
+  "name": "逾期查询提醒飞书通知",
+  "description": "当查询到逾期记录时，发送包含逾期租金物业费明细、逾期水电费明细、水电费未登记汇总的通知消息给跟进人员",
+  "icon": "",
+  "paramsSchema": {
+    "type": "object",
+    "properties": {
+      "follower_user_ids": {
+        "type": "array",
+        "description": "跟进人员用户ID列表",
+        "items": {
+          "type": "string",
+          "description": "用户ID"
+        }
+      },
+      "rent_property_overdue_detail": {
+        "type": "string",
+        "description": "逾期租金物业费明细内容"
+      },
+      "utility_overdue_detail": {
+        "type": "string",
+        "description": "逾期水电费明细内容"
+      },
+      "utility_unregistered_summary": {
+        "type": "string",
+        "description": "水电费未登记汇总内容"
+      }
+    },
+    "required": [
+      "follower_user_ids",
+      "rent_property_overdue_detail",
+      "utility_overdue_detail",
+      "utility_unregistered_summary"
+    ]
+  },
+  "formValue": {
+    "content": "## 逾期提醒\n\n### 1. 逾期租金物业费明细\n{{input.rent_property_overdue_detail}}\n\n### 2. 逾期水电费明细\n{{input.utility_overdue_detail}}\n\n### 3. 水电费未登记汇总\n{{input.utility_unregistered_summary}}\n\n请相关人员及时跟进处理。",
+    "receiverUserList": "{{input.follower_user_ids}}",
+    "sender": "bot",
+    "buttons": [],
+    "title": {
+      "titleColor": "red",
+      "title": "逾期提醒通知"
+    }
+  },
+  "createdAt": 1776828714320,
+  "updatedAt": 1776828714320,
+  "createdBy": 7551339667162824707
+}

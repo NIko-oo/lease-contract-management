@@ -1,0 +1,6 @@
+# 统一文本文件行尾为 LF（提交与检出均为 LF），消除 IDE 反复出现的 CRLF 行尾噪音 diff
+* text=auto eol=lf
+
+# 已知 GBK/混合编码文件：禁止任何行尾转换，避免破坏中文注释字节
+server/modules/dashboard/dashboard.service.ts -text
+shared/api.interface.ts -text

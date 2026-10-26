@@ -1,8 +1,34 @@
 # 行政租赁合同管理系统
 
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Node](https://img.shields.io/badge/node-%3E%3D22-339933?logo=node.js&logoColor=white)](package.json)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#贡献)
+
 基于飞书妙搭（Spark）的租赁合同全生命周期管理系统：房产与客户建档 → 合同录入与分段 → 财务审核 → 台账生成 → 收款登记 → 变更 / 终止，并附带水电费、对账单、逾期提醒与权限配置。
 
 > **运行前提**：这是一个面向飞书妙搭平台的参考实现。数据库、统一认证、RBAC 点位、插件与自动化触发器均由平台提供，脱离妙搭应用无法独立部署。
+
+- **适合**：想落地上线一套「合同 → 台账 → 收款」闭环、复用它作为起点的团队；想研究妙搭全栈应用（NestJS + React + 平台托管 PostgreSQL）写法的开发者。
+- **不适合**：需要开箱即用的 SaaS，或需要脱离飞书妙搭独立部署的场景。
+
+## 目录
+
+- [功能](#功能)
+- [界面预览](#界面预览)
+- [技术栈](#技术栈)
+- [架构](#架构)
+- [目录结构](#目录结构)
+- [快速开始](#快速开始)
+- [角色与权限](#角色与权限)
+- [关键业务口径](#关键业务口径)
+- [测试与检查](#测试与检查)
+- [文档](#文档)
+- [常见问题](#常见问题)
+- [数据与隐私](#数据与隐私)
+- [已知限制](#已知限制)
+- [贡献](#贡献)
+- [第三方组件](#第三方组件)
+- [License](#license)
 
 ## 功能
 
@@ -17,6 +43,10 @@
 - **统计与看板**：合同汇总、金额统计、到期提醒
 - **权限**：`action × subject` 点位 + 角色映射，前后端一致校验
 
+## 界面预览
+
+> 截图待补充。图片放入 [`assets/screenshots/`](assets/screenshots/) 后，本节将按「看板 / 台账管理 / 财务审核 / 权限配置」的顺序展示。
+
 ## 技术栈
 
 | 层 | 技术 |
@@ -26,6 +56,32 @@
 | UI | shadcn/ui、Tailwind CSS v4、lucide-react、antd-table toolkit |
 | 图表 / 导出 | echarts、xlsx、jspdf + html2canvas |
 | 测试 | Jest（56 个单元测试） |
+
+## 架构
+
+```mermaid
+flowchart LR
+  subgraph 浏览器
+    UI["React 19 + Vite<br/>shadcn/ui · TanStack Query"]
+  end
+  subgraph 妙搭应用
+    API["NestJS Controller<br/>@Can / @NeedLogin"]
+    SVC["业务服务<br/>contract · ledger · receipt"]
+    CAP["插件实例<br/>capabilities/*.json"]
+    AUTO["自动化<br/>@BindTrigger"]
+  end
+  subgraph 飞书平台
+    DB[("托管 PostgreSQL")]
+    AUTH["统一认证 + RBAC 点位"]
+    MSG["机器人消息"]
+  end
+
+  UI -->|axiosForBackend| API
+  API --> SVC --> DB
+  API -. 点位判定 .-> AUTH
+  SVC --> CAP --> MSG
+  AUTO --> SVC
+```
 
 ## 目录结构
 
@@ -50,14 +106,14 @@ test/               单元测试
 
 ### 前置条件
 
-- Node.js 20+、npm 10+
+- Node.js 22+、npm 10+
 - 一个飞书妙搭应用（用于托管数据库、认证与平台能力）
-- `lark-cli`（通过 `npx` 调用，无需全局安装）
+- `lark-cli`（通过 `npx` 调用，无需全局安装），并按提示完成 `lark-cli auth login`
 
 ### 启动
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/NIko-oo/lease-contract-management.git
 cd lease-contract-management
 npm install
 
@@ -87,11 +143,23 @@ lark-cli apps +db-execute --app-id <YOUR_APP_ID> --environment dev --file ./data
 lark-cli apps +db-execute --app-id <YOUR_APP_ID> --environment dev --file ./data/overdue_configs.sql --yes
 ```
 
-线上环境禁止执行 DDL / DCL，表结构通过 `+db-env-migrate` 同步。脚本细则见 [`data/README.md`](data/README.md)。
+线上环境禁止执行 DDL / DCL，表结构通过 `+db-env-migrate` 从 dev 同步。脚本细则见 [`data/README.md`](data/README.md)。
 
 ### 环境变量
 
 复制 `.env.example` 为 `.env`。使用平台托管数据库时 `SUDA_DATABASE_URL` 留空，由平台注入。`.env` 与 `.env.local` 均已被忽略。
+
+## 角色与权限
+
+| 角色 key | 名称 | 典型职责 |
+|---|---|---|
+| `super_admin` | 超级管理员 | 全部点位，含权限配置 |
+| `finance` | 财务人员 | 合同 / 变更 / 终止审核、台账收款、收款报表、统计、逾期提醒 |
+| `administrative` | 行政人员 | 房产、客户、合同录入与变更、终止申请、对账单 |
+| `logistics` | 后勤人员 | 水电费登记 |
+| `role_99xxcvu983p` | 总账会计 | 全部 `read` 点位，纯只读（平台生成的角色标识，创建后不可改） |
+
+前端按角色优先级 `super_admin > finance > administrative > logistics > role_99xxcvu983p` 默认选中；权限仍是**按点位**校验，UI 受控一律用 `CanPoint` / `usePointPermission`，不要用平台 `<Can>`（平台点位不受本系统权限配置页影响）。
 
 ## 关键业务口径
 
@@ -113,14 +181,63 @@ node scripts/gate.js  # 提交门禁（eslint / type check / stylelint / jest）
 
 > `npm run build` 是妙搭沙箱内的构建入口，依赖平台提供的 `fullstack-cli`；本地与 CI 请用 `npm run build:prod`。
 
+## 文档
+
+| 文档 | 内容 |
+|---|---|
+| [`AGENTS.md`](AGENTS.md) | 平台约定与坑、开发流程、跨表不变式——改代码前必读 |
+| [`docs/features.md`](docs/features.md) | 每个页面的字段、筛选项、弹窗交互与导出规则 |
+| [`docs/database.md`](docs/database.md) | 表结构逐字段说明、ER 图、迁移与初始化 |
+| [`docs/api-routes.md`](docs/api-routes.md) | 接口清单与所需权限点位对照 |
+| [`docs/ui-design.md`](docs/ui-design.md) | 色彩、字体、布局骨架与视觉禁区 |
+| [`docs/ui-components.md`](docs/ui-components.md) | shadcn 组件用法与图标规范 |
+| [`data/README.md`](data/README.md) | 各 SQL 脚本的作用、幂等性与可执行环境 |
+
+## 常见问题
+
+**启动提示找不到 `.spark/meta.json`**
+
+先执行 `npx -y @lark-apaas/miaoda-cli@latest app sync`，把本地目录与妙搭应用关联；该文件含环境专属 `app_id`，不入库。
+
+**手改了 `server/database/schema.ts`，结果被覆盖**
+
+它是 `fullstack-cli gen-db-schema` 的生成物。改表要走数据库侧（`data/<表>.sql`），再重新生成，不要直接编辑该文件。
+
+**发布后线上没有变化**
+
+发布默认只进 dev 环境，线上需要再显式发布一次。
+
+**按钮能看到，点了却提示无权限**
+
+前端 `CanPoint` 的 `action` / `subject` 必须与后端 controller 上 `@Can` 的字面完全一致；另外平台 `<Can>` 读的是平台侧点位，不受本项目权限配置页影响。
+
+**权限配置页改了没生效**
+
+`authz_*` 在 dev 与 online 是两套独立的库，改了哪个环境只有那个环境生效。
+
+**线上执行建表脚本报 `forbid ddl/dcl operation`**
+
+线上禁止 DDL / DCL，表结构用 `+db-env-migrate` 从 dev 同步，线上只跑 DML。
+
 ## 数据与隐私
 
 本仓库不包含任何生产数据。`data/seed/demo_data.sql` 中的公司、客户、信用代码、银行账号与合同均为虚构。部署到自己的环境后，请将 `client/src/config/organization.ts` 中的组织名称改为实际主体。
+
+发现安全问题请按 [`SECURITY.md`](SECURITY.md) 私下报告，不要开公开 Issue。
 
 ## 已知限制
 
 - 依赖飞书妙搭平台：数据库句柄、认证、RBAC 与插件/自动化触发器均由平台注入，无法脱离平台运行
 - `AGENTS.md` 中部分指针指向本项目内部的私有知识库，未随仓库发布
+
+## 贡献
+
+欢迎 Issue 与 Pull Request：
+
+1. 提 Issue 时请说明复现步骤、期望行为与实际结果；涉及界面问题请附截图
+2. 提交前跑一遍 `node scripts/gate.js`（eslint / 类型检查 / stylelint / jest 全过才放行）
+3. 改动命中合同、台账、金额计算或状态流转路径时，请同时补充或修改对应的 `test/unit/*.spec.ts`
+4. 安全漏洞不要走私密报告以外的渠道，见 [`SECURITY.md`](SECURITY.md)
 
 ## 第三方组件
 

@@ -6,6 +6,7 @@ README「界面预览」一节引用本目录图片。
 
 | 文件名 | 页面 | 说明 |
 |---|---|---|
+| `dashboard.png` | 数据看板 | 取自实际运行环境，房产名称已用色块遮罩；已裁掉侧边栏底部账号区与浏览器状态栏 |
 | `ledger.png` | 台账管理 | 取自实际运行环境，合同编号 / 承租方 / 房产名称已用色块遮罩 |
 
 ## 约定
@@ -18,4 +19,4 @@ README「界面预览」一节引用本目录图片。
 
 ## 待补
 
-`dashboard.png`（数据看板）、`finance-review.png`（财务审核）、`permission-config.png`（权限配置）。
+`finance-review.png`（财务审核）、`permission-config.png`（权限配置）。

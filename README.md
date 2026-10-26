@@ -129,3 +129,7 @@ node scripts/gate.js  # 提交门禁（eslint / type check / stylelint / jest）
 ## License
 
 [MIT](LICENSE)
+
+---
+
+🛰 联系方式：854548218
